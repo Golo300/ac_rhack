@@ -22,6 +22,7 @@ use std::time::Duration;
 extern crate libloading;
 extern crate ctor;
 use ctor::ctor;
+use libloading::{Library, Symbol};
 
 
 // include all the different sub modules of this hack as pub for the documentation
@@ -104,7 +105,7 @@ fn load() {
     // Check if the current process has a linux_64_client module (the main AC binary)
     // otherwise don't load the cheat here
     let process = Process::current().expect("Could not use /proc to obtain process information");
-    if let Err(_e) = process.module("linux_64_client") {
+    if let Err(_e) = process.module("native_client") {
         return;
     }
 
@@ -114,7 +115,8 @@ fn load() {
     let mut found = false;
     let modules = process.modules().expect("Could not parse the loaded modules");
     for module_name in modules.keys() {
-        if module_name.contains("libSDL-1.2") {
+        if module_name.contains("libSDL2-2") {
+            println!("{}", module_name);
             unsafe {
                 SDL_DYLIB = Some(
                     libloading::Library::new(module_name)
@@ -140,7 +142,7 @@ fn load() {
     // If we don't do this step, we might break something as some pointers might be uninitialized
     thread::spawn(|| {
         // Wait around 5 seconds to let the game actually load so that pointers are valid.
-        thread::sleep(Duration::from_secs(5));
+        thread::sleep(Duration::from_secs(3));
 
         // Load the cheat!
         unsafe {
@@ -149,61 +151,53 @@ fn load() {
     });
 }
 
-
-/// Calls the real SDL_GL_SwapBuffers() to render a game frame
-fn forward_to_orig_sdl_swap_buffers() -> i64 {
-    // this function is always initialized as we panic in the loading function
-    // if it can't be initialized
+fn forward_to_orig_sdl_swap_buffers(window: *mut std::ffi::c_void) -> i64 {
     unsafe {
-        // verify that SDL_DYLIB has already been initialized
-        let libsdl = &SDL_DYLIB;
-        if !libsdl.is_some() {
-            // in case it has not, just return  0. This will render a black screen
-            // in the AssaultCube window
-            return 0;
+        // Überprüfen, ob SDL2 korrekt geladen wurde
+        let libsdl2 = &SDL_DYLIB;
+        if !libsdl2.is_some() {
+            eprintln!("SDL2 is not loaded!");
+            return 0; // Bild bleibt schwarz
         }
 
-        let orig_sdl_swap_buffers:
-            libloading::Symbol<unsafe extern "C" fn() -> i64>
-            = SDL_DYLIB
-            .as_ref()
-            .unwrap()
-            .get(b"SDL_GL_SwapBuffers\0")
-            .expect("Could not find SDL_GL_SwapBuffers() in libSDL");
-        orig_sdl_swap_buffers()
+        // Finden der Original-SDL_GL_SwapWindow Funktion
+        let orig_sdl_swap_window: Symbol<unsafe extern "C" fn(*mut std::ffi::c_void) -> i64> =
+            SDL_DYLIB
+                .as_ref()
+                .unwrap()
+                .get(b"SDL_GL_SwapWindow\0")
+                .expect("Could not find SDL_GL_SwapWindow() in libSDL2");
+
+        // Aufruf der Original-Funktion, um den Puffer zu tauschen
+        orig_sdl_swap_window(window)
     }
 }
 
-/// This is the "main" function of this cheat.
-/// SDL_GL_SwapBuffers() is called by the game for each frame that is generated.
-#[no_mangle]
-pub extern "C" fn SDL_GL_SwapBuffers() -> i64 {
 
+#[no_mangle]
+pub extern "C" fn SDL_GL_SwapWindow(window: *mut std::ffi::c_void) -> i64 {
     // rustc falsely detects this as an unused mutable
     #![allow(unused_mut)]
-    let hack = unsafe {
-        &mut AC_HACK
-    };
+    let hack = unsafe { &mut AC_HACK };
 
-    // verify that the AC_HACK has been loaded and initialized already
-    // otherwise just render the frame
+    // Check if AC_HACK is initialized
     if !hack.is_some() {
-        return forward_to_orig_sdl_swap_buffers();
+        // If not initialized, just render the frame
+        return forward_to_orig_sdl_swap_buffers(window);
     }
+    println!("in the mehtod");
+
     let mut hack = hack.as_mut().unwrap();
 
-    // here comes the logic of the hack
+    // Here goes the logic for the cheat
 
-    // handle ESP logic
-    hack.esp.draw();
+    // Handle ESP logic
+    //hack.esp.draw();
 
-    // handle aimbot logic
+    // Handle aimbot logic
     hack.aimbot.logic();
 
-    // call the real SDL_GL_SwapBuffers() to render the frame and continue with the logic
-    forward_to_orig_sdl_swap_buffers()
+    // Call the real SDL_GL_SwapWindow to render the frame
+    forward_to_orig_sdl_swap_buffers(window)
 }
-
-
-
 

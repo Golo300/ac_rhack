@@ -70,6 +70,7 @@ impl ESP {
 
     /// If enabled, draw ESP boxes
     pub fn draw(&mut self) {
+        println!("in the esp");
         // save the current GL state, switch to 2D mode and obtain the window dimenstions
         let win_dimensions = self.switch_to_2d();
 

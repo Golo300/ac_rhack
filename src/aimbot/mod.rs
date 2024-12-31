@@ -103,6 +103,7 @@ impl AimBot {
     pub fn logic(&mut self) {
 
         // stop shooting if we are not locked onto a target
+        println!("in the aimbot");
         if self.autoshoot {
             self.player.stop_shoot();
         }

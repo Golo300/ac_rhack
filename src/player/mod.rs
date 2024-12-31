@@ -208,6 +208,7 @@ impl Player {
 
 	/// stops shooting after having started through autoshoot
 	pub fn stop_shoot(&mut self) {
+        println!("in the aimbot");
 		InternalMemory::write(self.base + PLAYER_ATTACKING_OFF, 0 as u8)
 	}
 
