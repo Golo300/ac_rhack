@@ -137,13 +137,14 @@ pub extern "C" fn SDL_GL_SwapWindow(window: *mut std::ffi::c_void) -> i64 {
 
     let mut hack = unsafe { hack.as_mut().unwrap() };
     let offset_health: i32 = 0x100;
+    let offset_ammo: i32 = 0x154;
 
     unsafe {
         if !hack.player_pointer.is_null() {
             let health: *const i64 = (hack.player_pointer as usize + offset_health as usize) as *const i64;
             InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
-            // let ammo: *const i64 = (hack.player_pointer as usize + offset_ammo as usize) as *const i64;
-            // InternalMemory::write::<i32>(ammo as usize, 1000); 
+            let ammo: *const i64 = (hack.player_pointer as usize + offset_ammo as usize) as *const i64;
+            InternalMemory::write::<i32>(ammo as usize, 1000); 
         } else {
             println!("Player pointer is null!");
         }
