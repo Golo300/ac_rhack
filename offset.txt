@@ -1,0 +1,10 @@
+base client offset: 1B1FF0 -> world -> playerbase
+
+1B1FF0
+
+
+multiplayer:
+
+567FDE1E64B8 - 567fde04c000
+
+player1 offset: 19A4B8

@@ -94,8 +94,11 @@ impl InternalMemory {
 	}
 
 	pub fn read<T: MemData + Copy>(addr: usize)  -> T {
+        println!("1");
 		let ptr: *const T = addr as *const T;
+        println!("2");
 		let ret: T = unsafe { *ptr };
+        println!("3");
 		ret
 	}
 }
