@@ -53,6 +53,7 @@ impl AcHack {
     }
 
     fn init() -> Self {
+        println!("here");
         let mut hack = Self::new();
         hack.aimbot.enable();
         hack.aimbot.norecoil_spread.toggle();
@@ -60,7 +61,7 @@ impl AcHack {
         hack.infinite_ammo.toggle();
         hack.god_mode.toggle();
 
-        let offset: usize = 0x19A4B8;
+        let offset: usize = 0x19D518;
         let gameBase: usize = game_base();
         let player1: *const i64 = (gameBase + offset) as *const i64;
         
@@ -76,15 +77,14 @@ impl AcHack {
 #[ctor]
 fn load() {
     let process = Process::current().expect("Could not use /proc to obtain process information");
-    if let Err(_e) = process.module("native_client") {
+    if let Err(_e) = process.module("linux_64_client") {
         return;
     }
 
     let mut found = false;
     let modules = process.modules().expect("Could not parse the loaded modules");
     for module_name in modules.keys() {
-        if module_name.contains("libSDL2-2") {
-            println!("{}", module_name);
+        if module_name.contains("libSDL2") {
             unsafe {
                 SDL_DYLIB = Some(libloading::Library::new(module_name).expect("Could not load libSDL"));
             };
@@ -100,7 +100,7 @@ fn load() {
     println!("Waiting 5 seconds for the game to initialize before touching anything.");
 
     thread::spawn(|| {
-        thread::sleep(Duration::from_secs(3));
+        thread::sleep(Duration::from_secs(5));
         unsafe {
             AC_HACK = Some(AcHack::init());
         }
@@ -141,13 +141,14 @@ pub extern "C" fn SDL_GL_SwapWindow(window: *mut std::ffi::c_void) -> i64 {
 
     unsafe {
         if !hack.player_pointer.is_null() {
-            let health: *const i64 = (hack.player_pointer as usize + offset_health as usize) as *const i64;
-            InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
-            let ammo: *const i64 = (hack.player_pointer as usize + offset_ammo as usize) as *const i64;
-            InternalMemory::write::<i32>(ammo as usize, 1000); 
+             let health: *const i64 = (hack.player_pointer as usize + offset_health as usize) as *const i64;
+             InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
+             let ammo: *const i64 = (hack.player_pointer as usize + offset_ammo as usize) as *const i64;
+             InternalMemory::write::<i32>(ammo as usize, 1000); 
         } else {
             println!("Player pointer is null!");
         }
+
     }
 
     println!("game_base: {:#x}", game_base());

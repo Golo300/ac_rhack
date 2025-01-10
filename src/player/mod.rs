@@ -8,7 +8,8 @@ use crate::{InternalMemory, ESP};
 use crate::util::{game_base, Vec3, ViewMatrix};
 
 /// offset to the player1 pointer from the base of the loaded game
-const PLAYER1_OFF: usize = 0x128328;
+const PLAYER1_OFF: usize = 0x19D518;
+// new offset 19D518
 
 /// offset to the vector of player pointers from the base of the loaded game
 const PLAYERS_OFF: usize = 0x128330;

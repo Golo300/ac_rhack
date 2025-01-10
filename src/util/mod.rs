@@ -1,5 +1,3 @@
-
-
 mod shellcode;
 pub use shellcode::*;
 
@@ -16,7 +14,7 @@ pub fn game_base() -> usize {
         if GAME_BASE.is_none() {
             let process = Process::current().expect("Failed to use /proc to obtain process information");
             GAME_BASE = Some(
-                process.module("native_client")
+                process.module("linux_64_client")
                     .expect("Could not find game module in current process")
                     .base
             );
