@@ -1,20 +1,24 @@
 use std::thread;
 use std::time::Duration;
+use std::process::Command;
+use std::path::Path;
+
 extern crate libloading;
 extern crate ctor;
 
 use ctor::ctor;
 use libloading::{Library, Symbol};
-use crate::{InternalMemory, ESP};
+use crate::{InternalMemory};
 use crate::util::{game_base, Vec3, ViewMatrix};
 
 pub mod process;
 pub mod player;
 pub mod aimbot;
-pub mod esp;
+// pub mod esp;
 pub mod util;
 
-pub use esp::*;
+// make all their symbols available to the other submodules through 'crate::'
+// pub use esp::*;
 pub use aimbot::*;
 pub use player::*;
 pub use process::*;
@@ -32,21 +36,16 @@ static mut SDL_DYLIB: Option<libloading::Library> = None;
 /// The main struct containing the current configuration of the cheat
 struct AcHack {
     pub player: Player,
-    pub god_mode: GodMode,
-    pub infinite_ammo: InfiniteAmmo,
-    pub aimbot: AimBot,
-    pub esp: ESP,
     pub player_pointer: *const i64,
+
+    // Used to configure the ESP
+    // pub esp: ESP,
 }
 
 impl AcHack {
     fn new() -> Self {
         let player = Player::player1();
         AcHack {
-            aimbot: AimBot::new(),
-            esp: ESP::new(),
-            god_mode: GodMode::new(),
-            infinite_ammo: InfiniteAmmo::new(),
             player,
             player_pointer: std::ptr::null_mut(),
         }
@@ -55,11 +54,6 @@ impl AcHack {
     fn init() -> Self {
         println!("here");
         let mut hack = Self::new();
-        hack.aimbot.enable();
-        hack.aimbot.norecoil_spread.toggle();
-        hack.aimbot.enable_autoshoot();
-        hack.infinite_ammo.toggle();
-        hack.god_mode.toggle();
 
         let offset: usize = 0x19D518;
         let gameBase: usize = game_base();
@@ -74,10 +68,28 @@ impl AcHack {
     }
 }
 
+fn get_sdl2_image_path() -> String {
+    let output = Command::new("nix")
+        .args(&["eval", "--raw", "nixpkgs#SDL2_image.outPath"])
+        .output()
+        .expect("Failed to call nix");
+
+    let out_path = String::from_utf8(output.stdout).unwrap();
+    let lib_path = format!("{}/lib/libSDL2_image-2.0.so.0.800.8", out_path);
+    assert!(
+        Path::new(&lib_path).exists(),
+        "Library not found at {}",
+        lib_path
+    );
+    lib_path
+}
+
+/// This function is executed when the hack is loaded into the game
+/// it is used to initialize the hack, launch a new thread that listens for keyboard bindings etc
 #[ctor]
 fn load() {
     let process = Process::current().expect("Could not use /proc to obtain process information");
-    if let Err(_e) = process.module("linux_64_client") {
+    if let Err(_e) = process.module("ac_client") {
         return;
     }
 
@@ -85,8 +97,13 @@ fn load() {
     let modules = process.modules().expect("Could not parse the loaded modules");
     for module_name in modules.keys() {
         if module_name.contains("libSDL2") {
+            println!("{}", module_name);
+            let lib_path = get_sdl2_image_path();
             unsafe {
-                SDL_DYLIB = Some(libloading::Library::new(module_name).expect("Could not load libSDL"));
+                SDL_DYLIB = Some(
+                    libloading::Library::new(&lib_path)
+                        .expect("Could not load libSDL")
+                )
             };
             found = true;
         }
@@ -142,9 +159,9 @@ pub extern "C" fn SDL_GL_SwapWindow(window: *mut std::ffi::c_void) -> i64 {
     unsafe {
         if !hack.player_pointer.is_null() {
              let health: *const i64 = (hack.player_pointer as usize + offset_health as usize) as *const i64;
-             InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
+             // InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
              let ammo: *const i64 = (hack.player_pointer as usize + offset_ammo as usize) as *const i64;
-             InternalMemory::write::<i32>(ammo as usize, 1000); 
+             // InternalMemory::write::<i32>(ammo as usize, 1000); 
         } else {
             println!("Player pointer is null!");
         }

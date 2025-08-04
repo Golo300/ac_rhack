@@ -4,7 +4,7 @@ pub use godmode::GodMode;
 
 mod infiniteammo;
 pub use infiniteammo::InfiniteAmmo;
-use crate::{InternalMemory, ESP};
+use crate::{InternalMemory};
 use crate::util::{game_base, Vec3, ViewMatrix};
 
 /// offset to the player1 pointer from the base of the loaded game
@@ -197,9 +197,10 @@ impl Player {
 
 	/// returns true if a player is infront of the player on the 2D screen
 	pub fn is_in_view(&self) -> bool {
-		let pos = self.get_pos();
-		let (window_width, window_height) = ESP::window_dimensions();
-		ViewMatrix::new().world_to_screen(pos, window_width, window_height).0
+		// let pos = self.get_pos();
+		// let (window_width, window_height) = ESP::window_dimensions();
+		// ViewMatrix::new().world_to_screen(pos, window_width, window_height).0
+        return false;
 	}
 
 	/// triggers the ->attacking state of the player to start shooting
