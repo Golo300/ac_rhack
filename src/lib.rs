@@ -12,15 +12,11 @@ use crate::{InternalMemory};
 use crate::util::{game_base, Vec3, ViewMatrix};
 
 pub mod process;
-pub mod player;
-pub mod aimbot;
 // pub mod esp;
 pub mod util;
 
 // make all their symbols available to the other submodules through 'crate::'
 // pub use esp::*;
-pub use aimbot::*;
-pub use player::*;
 pub use process::*;
 pub use util::*;
 
@@ -35,27 +31,21 @@ static mut SDL_DYLIB: Option<libloading::Library> = None;
 
 /// The main struct containing the current configuration of the cheat
 struct AcHack {
-    pub player: Player,
     pub player_pointer: *const i64,
-
-    // Used to configure the ESP
-    // pub esp: ESP,
 }
 
 impl AcHack {
     fn new() -> Self {
-        let player = Player::player1();
         AcHack {
-            player,
             player_pointer: std::ptr::null_mut(),
         }
     }
 
     fn init() -> Self {
-        println!("here");
         let mut hack = Self::new();
 
-        let offset: usize = 0x19D518;
+        // let offset: usize = 0x19D518;
+        let offset: usize = 0x1BCE90;
         let gameBase: usize = game_base();
         let player1: *const i64 = (gameBase + offset) as *const i64;
         
@@ -63,6 +53,8 @@ impl AcHack {
             let player: *const i64 = *player1 as *const i64;
             hack.player_pointer = player;
         }
+
+        println!("game_base: {:#x}", game_base());
 
         hack
     }
@@ -96,8 +88,7 @@ fn load() {
     let mut found = false;
     let modules = process.modules().expect("Could not parse the loaded modules");
     for module_name in modules.keys() {
-        if module_name.contains("libSDL2") {
-            println!("{}", module_name);
+        if module_name.contains("libSDL2-2") {
             let lib_path = get_sdl2_image_path();
             unsafe {
                 SDL_DYLIB = Some(
@@ -159,20 +150,14 @@ pub extern "C" fn SDL_GL_SwapWindow(window: *mut std::ffi::c_void) -> i64 {
     unsafe {
         if !hack.player_pointer.is_null() {
              let health: *const i64 = (hack.player_pointer as usize + offset_health as usize) as *const i64;
-             // InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
+             InternalMemory::write::<i32>(health as usize, 1000); // Setting health to 1000 (God Mode)
              let ammo: *const i64 = (hack.player_pointer as usize + offset_ammo as usize) as *const i64;
-             // InternalMemory::write::<i32>(ammo as usize, 1000); 
+             InternalMemory::write::<i32>(ammo as usize, 1000); 
         } else {
             println!("Player pointer is null!");
         }
 
     }
-
-    println!("game_base: {:#x}", game_base());
-
-    // Here you can add other cheat logic (e.g., ESP, aimbot)
-    // hack.esp.draw();
-    // hack.aimbot.logic();
 
     forward_to_orig_sdl_swap_buffers(window)
 }
