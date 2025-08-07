@@ -1,5 +1,5 @@
 /target
+/result
 /.idea
-Cargo.lock
 /ac
 linux_64_client.bndb
