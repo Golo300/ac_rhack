@@ -25,9 +25,9 @@ sudo apt-install libsdl-image1.2-dev -y
 Then, simply run
 
 ```bash
-cargo build --release # 
+cargo build --release # -> ./target/release/libac_rhack.so
 # or under nixos
-nix build
+nix build # -> ./result/lib/libac_rhack.so
 ```
 
 ### Loading the cheat
@@ -50,5 +50,3 @@ A documentation can be generated via
 ```bash
 cargo doc
 ```
-
-Alternatively, just read the source code. I made lots of comments.
