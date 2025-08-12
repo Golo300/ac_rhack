@@ -1,4 +1,4 @@
-This basic cheat is the result of a side-project I did for fun. It is an Internal Hack for AssaultCube on Linux written in Rust.
+This basic cheat is the result of a side-project I did for fun. It is an Internal Hack for AssaultCube on Linux written in Rust. The cheat only works for the binary compiled from the provided source code of cAC. If the code changes, the offsets, which are hard-coded, will also need to be updated.
 
 ## Features
 
